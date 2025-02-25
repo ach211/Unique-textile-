@@ -1,0 +1,73 @@
+ecommerce-flask/
+│── app.py
+│── templates/
+│   │── index.html
+│   │── product.html
+│   │── cart.html
+│── static/
+│   │── styles.css
+│── database.db  (SQLite Database)
+│── models.py
+│── routes.py
+│── forms.py
+│── requirements.txt
+
+pip install flask flask_sqlalchemy flask_wtf flask_bcrypt flask_login
+
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+app.config['SECRET_KEY'] = 'your_secret_key'
+
+db = SQLAlchemy(app)
+
+from routes import *
+
+if __name__ == "__main__":
+    app.run(debug=True)
+from app import db
+
+class Product(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    description = db.Column(db.Text, nullable=True)
+
+# Run this in Python shell once: 
+# >>> from models import db
+# >>> db.create_all()
+
+from flask import render_template, request, redirect, url_for
+from app import app, db
+from models import Product
+
+@app.route('/')
+def home():
+    products = Product.query.all()
+    return render_template('index.html', products=products)
+
+@app.route('/product/<int:id>')
+def product_page(id):
+    product = Product.query.get_or_404(id)
+    return render_template('product.html', product=product)
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Shop</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Welcome to the Store</h1>
+    <div>
+        {% for product in products %}
+            <div>
+                <h2><a href="{{ url_for('product_page', id=product.id) }}">{{ product.name }}</a></h2>
+                <p>Price: ${{ product.price }}</p>
+            </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
